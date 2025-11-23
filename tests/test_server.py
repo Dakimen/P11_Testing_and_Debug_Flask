@@ -188,3 +188,8 @@ class TestServer:
         )
         html = response.get_data(as_text=True)
         assert "A non-valid number of places required." in html
+
+    def test_pointsBoard(self, client):
+        response = client.get('/points')
+        expected_html = render_template('points.html', clubs=server.clubs)
+        assert response.data.decode() == expected_html
