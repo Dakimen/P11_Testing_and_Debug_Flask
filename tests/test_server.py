@@ -1,31 +1,32 @@
 import json
 from flask import render_template, url_for
 import pytest
+from unittest.mock import mock_open
 
-from tests.conftest import app
+from tests.conftest import app, test_data
 import server
 
 
-@pytest.fixture(scope="class")
-def test_data(request):
-    with open('clubs.json') as file:
-        clubs = json.load(file)['clubs']
-
-    with open('competitions.json') as file:
-        competitions = json.load(file)["competitions"]
-
-    return {'clubs': clubs, 'competitions': competitions}
+@pytest.fixture
+def mock_db(mocker, test_data):
+    mocker.patch("server.clubs", test_data["clubs"].copy())
+    mocker.patch("server.competitions", test_data["competitions"].copy())
+    yield
 
 
-@pytest.mark.usefixtures("test_data", "app")
+@pytest.mark.usefixtures("test_data", "app", "mock_db")
 class TestServer:
 
-    def test_loadClubs(self, test_data):
+    def test_loadClubs(self, test_data, mocker):
+        fake_content = json.dumps({"clubs": test_data['clubs']})
+        mocker.patch("builtins.open", mock_open(read_data=fake_content))
         result = server.loadClubs()
 
         assert result == test_data['clubs']
 
-    def test_loadCompetitions(self, test_data):
+    def test_loadCompetitions(self, test_data, mocker):
+        fake_content = json.dumps({"competitions": test_data["competitions"]})
+        mocker.patch("builtins.open", mock_open(read_data=fake_content))
         result = server.loadCompetitions()
 
         assert result == test_data['competitions']
@@ -96,24 +97,94 @@ class TestServer:
         assert response.data.decode() == expected_html_not_club
 
     def test_purchasePlaces_too_many(self, client):
-        server.competitions[:] = [{
-            "name": "TestComp",
-            "date": "2025-12-20 12:00:00",
-            "numberOfPlaces": "5"
-        }]
+        club = server.clubs[0]
+        competition = server.competitions[0]
 
-        server.clubs[:] = [{
-            "name": "TestClub",
-            "email": "test@example.com",
-            "points": "10"
-        }]
         response = client.post(
             "/purchasePlaces",
             data={
-                "competition": "TestComp",
-                "club": "TestClub",
-                "places": "10"
+                "competition": competition["name"],
+                "club": club['name'],
+                "places": "30"
             }
         )
-        updated = server.competitions[0]
-        assert int(updated["numberOfPlaces"]) >= 0
+
+        html = response.get_data(as_text=True)
+        assert "Not enough spots available. Booking failed!" in html
+
+    def test_purchasePlaces(self, client):
+        club = server.clubs[0]
+        competition = server.competitions[0]
+
+        response = client.post(
+            "/purchasePlaces",
+            data={
+                "competition": competition["name"],
+                "club": club['name'],
+                "places": "20"
+            }
+        )
+
+        html = response.get_data(as_text=True)
+        assert "Great-booking complete!" in html
+
+    def test_purchasePlaces_invalid_competition(self, client):
+        club = server.clubs[0]
+
+        response = client.post("/purchasePlaces", data={
+            "competition": "NOT_A_REAL_COMP",
+            "club": club["name"],
+            "places": "5",
+        })
+        assert "Incorrect form data, invalid competition. Booking failed!" in response.get_data(as_text=True)
+
+    def test_purchasePlaces_invalid_club(self, client):
+        competition = server.competitions[0]
+
+        response = client.post("/purchasePlaces", data={
+            "competition": competition["name"],
+            "club": "NOT_A_REAL_CLUB",
+            "places": "5",
+        })
+        expected_html = render_template('index.html')
+        assert response.data.decode() == expected_html
+
+    def test_purchasePlaces_missing_fields(self, client):
+        club = server.clubs[0]
+        response = client.post("/purchasePlaces", data={
+            "club": club["name"],
+            "places": "5",
+        })
+        html = response.get_data(as_text=True)
+        assert "Competition field is missing" in html
+
+        competition = server.competitions[0]
+        response = client.post("/purchasePlaces", data={
+            "competition": competition["name"],
+            "places": "5",
+        })
+        html = response.data.decode()
+        expected_html = render_template('index.html')
+        assert html == expected_html
+
+        response = client.post("/purchasePlaces", data={
+            "competition": competition["name"],
+            "club": club["name"],
+        })
+        html = response.get_data(as_text=True)
+        assert "Number of places field is missing" in html
+
+    @pytest.mark.parametrize("places", ["-2", "two", "0"])
+    def test_purchasePlaces_invalidNumber(self, client, places):
+        competition = server.competitions[0]
+        club = server.clubs[0]
+        response = client.post(
+            "/purchasePlaces",
+            data={
+                "competition": competition["name"],
+                "club": club['name'],
+                "places": places
+            }
+        )
+        html = response.get_data(as_text=True)
+        assert "A non-valid number of places required." in html

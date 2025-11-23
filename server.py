@@ -41,15 +41,43 @@ def book(competition,club):
         return render_template('welcome.html', club=club, competitions=competitions)
 
 
-@app.route('/purchasePlaces',methods=['POST'])
+@app.route('/purchasePlaces', methods=['POST'])
 def purchasePlaces():
-    competition = [c for c in competitions if c['name'] == request.form['competition']][0]
-    club = [c for c in clubs if c['name'] == request.form['club']][0]
-    placesRequired = int(request.form['places'])
-    competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
-    if competition['numberOfPlaces'] < 0:
-        competition['numberOfPlaces'] = 0
-    flash('Great-booking complete!')
+    competition_name = request.form.get('competition')
+    club_name = request.form.get('club')
+    places_str = request.form.get('places')
+    if not club_name:
+        return render_template('index.html')
+    club = next((c for c in clubs if c['name'] == club_name), None)
+    if club is None:
+        return render_template('index.html')
+
+    if not competition_name:
+        flash("Competition field is missing. Booking failed!")
+        return render_template('welcome.html', club=club, competitions=competitions)
+
+    if not places_str:
+        flash("Number of places field is missing. Booking failed!")
+        return render_template('welcome.html', club=club, competitions=competitions)
+
+    competition = next((c for c in competitions if c['name'] == competition_name), None)
+    if competition is None:
+        flash("Incorrect form data, invalid competition. Booking failed!")
+        return render_template('welcome.html', club=club, competitions=competitions)
+    try:
+        placesRequired = int(places_str)
+    except (TypeError, ValueError):
+        flash("A non-valid number of places required. Booking failed!")
+        return render_template('welcome.html', club=club, competitions=competitions)
+    if placesRequired <= 0:
+        flash("A non-valid number of places required. Booking failed!")
+        return render_template('welcome.html', club=club, competitions=competitions)
+
+    if placesRequired > int(competition['numberOfPlaces']):
+        flash("Not enough spots available. Booking failed!")
+    else:
+        competition['numberOfPlaces'] = int(competition['numberOfPlaces'])-placesRequired
+        flash('Great-booking complete!')
     return render_template('welcome.html', club=club, competitions=competitions)
 
 
