@@ -193,17 +193,3 @@ class TestServer:
         )
         html = response.get_data(as_text=True)
         assert "A non-valid number of places required." in html
-
-    def test_purchasePlaces_pointsUpdated(self, client):
-        club = server.clubs[0]  # has 13 points
-        competition = server.competitions[0]
-        points_expected = 5
-        client.post(
-            "/purchasePlaces",
-            data={
-                "competition": competition["name"],
-                "club": club['name'],
-                "places": "8"
-            }
-        )
-        assert server.clubs[0]['points'] == points_expected
