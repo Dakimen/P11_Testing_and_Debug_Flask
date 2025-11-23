@@ -35,8 +35,7 @@ class TestServer:
         response = client.get("/")
         assert response.status_code == 200
 
-        with open(f"{app.template_folder}/index.html", encoding="utf-8") as f:
-            expected_html = f.read()
+        expected_html = render_template('index.html')
         assert response.data.decode() == expected_html
 
     def test_showSummary(self, client, test_data):
@@ -193,3 +192,4 @@ class TestServer:
         response = client.get('/points')
         expected_html = render_template('points.html', clubs=server.clubs)
         assert response.data.decode() == expected_html
+        assert "Club Test" in response.get_data(as_text=True)
