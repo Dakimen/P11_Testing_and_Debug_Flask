@@ -2,6 +2,7 @@ import json
 from flask import render_template, url_for
 import pytest
 from unittest.mock import mock_open
+import copy
 
 from tests.conftest import app, test_data
 import server
@@ -9,9 +10,13 @@ import server
 
 @pytest.fixture
 def mock_db(mocker, test_data):
-    mocker.patch("server.clubs", test_data["clubs"].copy())
-    mocker.patch("server.competitions", test_data["competitions"].copy())
-    yield
+    clubs_copy = copy.deepcopy(test_data["clubs"])
+    competitions_copy = copy.deepcopy(test_data["competitions"])
+
+    mocker.patch.object(server, "clubs", clubs_copy)
+    mocker.patch.object(server, "competitions", competitions_copy)
+
+    return {"clubs": clubs_copy, "competitions": competitions_copy}
 
 
 @pytest.mark.usefixtures("test_data", "app", "mock_db")
@@ -188,3 +193,17 @@ class TestServer:
         )
         html = response.get_data(as_text=True)
         assert "A non-valid number of places required." in html
+
+    def test_purchasePlaces_pointsUpdated(self, client):
+        club = server.clubs[0]  # has 13 points
+        competition = server.competitions[0]
+        points_expected = 5
+        client.post(
+            "/purchasePlaces",
+            data={
+                "competition": competition["name"],
+                "club": club['name'],
+                "places": "8"
+            }
+        )
+        assert server.clubs[0]['points'] == points_expected
