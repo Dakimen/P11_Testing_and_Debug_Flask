@@ -126,7 +126,7 @@ class TestServer:
             data={
                 "competition": competition["name"],
                 "club": club['name'],
-                "places": "20"
+                "places": "8"
             }
         )
 
@@ -193,3 +193,17 @@ class TestServer:
         )
         html = response.get_data(as_text=True)
         assert "A non-valid number of places required." in html
+
+    def test_purchasePlaces_more_than_12(self, client):
+        competition = server.competitions[0]
+        club = server.clubs[0]
+        response = client.post(
+            "/purchasePlaces",
+            data={
+                "competition": competition["name"],
+                "club": club['name'],
+                "places": "13"
+            }
+        )
+        html = response.get_data(as_text=True)
+        assert "No more than 12 places allowed per club." in html
