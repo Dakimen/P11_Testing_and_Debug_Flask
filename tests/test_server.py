@@ -103,14 +103,14 @@ class TestServer:
 
     def test_purchasePlaces_too_many(self, client):
         club = server.clubs[0]
-        competition = server.competitions[0]
+        competition = server.competitions[2]
 
         response = client.post(
             "/purchasePlaces",
             data={
                 "competition": competition["name"],
                 "club": club['name'],
-                "places": "30"
+                "places": "11"
             }
         )
 
@@ -206,4 +206,4 @@ class TestServer:
             }
         )
         html = response.get_data(as_text=True)
-        assert "No more than 12 places allowed per club." in html
+        assert "No more than 12 places allowed per club. Booking failed!" in html
