@@ -58,7 +58,7 @@ class TestServer:
 
     def test_book_if_found(self, client, test_data):
         club = test_data['clubs'][1]
-        competition = test_data['competitions'][0]
+        competition = test_data['competitions'][2]  # Competition date: 2025-12-20 14:00:00
 
         expected_html = render_template('booking.html', club=club, competition=competition)
         url = url_for("book", competition=competition['name'], club=club['name'])
@@ -100,6 +100,15 @@ class TestServer:
         response = client.get(url_not_club)
 
         assert response.data.decode() == expected_html_not_club
+
+    def test_book_past_competition(self, client):
+        club = server.clubs[0]
+        competition = server.competitions[0]
+        url = url_for("book", competition=competition['name'], club=club['name'])
+        response = client.get(url)
+        html = response.get_data(as_text=True)
+
+        assert "Impossible to book places for a past competition. Booking failed!" in html
 
     def test_purchasePlaces_too_many(self, client):
         club = server.clubs[0]
