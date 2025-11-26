@@ -193,3 +193,17 @@ class TestServer:
         )
         html = response.get_data(as_text=True)
         assert "A non-valid number of places required." in html
+
+    def test_purcasePlaces_no_more_than_club_points(self, client):
+        competition = server.competitions[2]
+        club = server.clubs[1]  # 4 points
+        response = client.post(
+            "/purchasePlaces",
+            data={
+                "competition": competition["name"],
+                "club": club["name"],
+                "places": "10"  # Still within 12 points limit
+            }
+        )
+        html = response.get_data(as_text=True)
+        assert "Unable to book more places than the points available. Booking failed!" in html
