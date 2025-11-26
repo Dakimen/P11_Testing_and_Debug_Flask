@@ -16,7 +16,7 @@ def test_data(request):
         {
             "name": "Club 1",
             "email": "john@club1.co",
-            "points": "13"
+            "points": "30"
         },
         {
             "name": "Club Test",
