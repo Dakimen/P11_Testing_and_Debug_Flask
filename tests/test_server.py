@@ -105,14 +105,14 @@ class TestServer:
 
     def test_purchasePlaces_too_many(self, client):
         club = server.clubs[0]
-        competition = server.competitions[0]
+        competition = server.competitions[2]
 
         response = client.post(
             "/purchasePlaces",
             data={
                 "competition": competition["name"],
                 "club": club['name'],
-                "places": "30"
+                "places": "11"
             }
         )
 
@@ -128,7 +128,7 @@ class TestServer:
             data={
                 "competition": competition["name"],
                 "club": club['name'],
-                "places": "20"
+                "places": "8"
             }
         )
 
@@ -216,3 +216,17 @@ class TestServer:
         expected_html = render_template('points.html', clubs=server.clubs)
         assert response.data.decode() == expected_html
         assert "Club Test" in response.get_data(as_text=True)
+
+    def test_purchasePlaces_more_than_12(self, client):
+        competition = server.competitions[0]
+        club = server.clubs[0]
+        response = client.post(
+            "/purchasePlaces",
+            data={
+                "competition": competition["name"],
+                "club": club['name'],
+                "places": "13"
+            }
+        )
+        html = response.get_data(as_text=True)
+        assert "No more than 12 places allowed per club. Booking failed!" in html
