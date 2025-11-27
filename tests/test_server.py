@@ -40,8 +40,7 @@ class TestServer:
         response = client.get("/")
         assert response.status_code == 200
 
-        with open(f"{app.template_folder}/index.html", encoding="utf-8") as f:
-            expected_html = f.read()
+        expected_html = render_template('index.html')
         assert response.data.decode() == expected_html
 
     def test_showSummary(self, client, test_data):
@@ -64,7 +63,7 @@ class TestServer:
                 "email": email
             }
         )
-        error_msg = "Sorry, that email wasn't found."
+        error_msg = "Sorry, that email wasn&#39;t found."
         assert error_msg in response.get_data(as_text=True)
 
     def test_book_if_found(self, client, test_data):
