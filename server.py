@@ -29,7 +29,11 @@ def index():
 
 @app.route('/showSummary', methods=['POST'])
 def showSummary():
-    club = [club for club in clubs if club['email'] == request.form['email']][0]
+    try:
+        club = [club for club in clubs if club['email'] == request.form['email']][0]
+    except IndexError:
+        flash("Sorry, that email wasn't found.")
+        return render_template('index.html')
     return render_template('welcome.html', club=club, competitions=competitions)
 
 
