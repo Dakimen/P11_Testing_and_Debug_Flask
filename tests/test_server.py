@@ -57,7 +57,7 @@ class TestServer:
 
     def test_book_if_found(self, client, test_data):
         club = test_data['clubs'][1]
-        competition = test_data['competitions'][0]
+        competition = test_data['competitions'][2]  # Competition date: 2025-12-20 14:00:00
 
         expected_html = render_template('booking.html', club=club, competition=competition)
         url = url_for("book", competition=competition['name'], club=club['name'])
@@ -72,16 +72,13 @@ class TestServer:
             "numberOfPlaces": "13"
             }
         club = test_data['clubs'][1]
-        competitions = test_data['competitions']
-        expected_html_not_competition = render_template('welcome.html',
-                                                        club=club,
-                                                        competitions=competitions)
         url_not_competition = url_for('book',
                                       competition=inexistant_competition['name'],
                                       club=club['name'])
         response = client.get(url_not_competition)
+        html = response.get_data(as_text=True)
 
-        assert response.data.decode() == expected_html_not_competition
+        assert "Something went wrong-please try again" in html
 
     def test_book_if_notClub(self, client, test_data):
         inexistant_club = {
@@ -89,16 +86,22 @@ class TestServer:
             "email": "inexistant@lifting.co",
             "points": "13"
             }
-        competitions = test_data['competitions']
-        expected_html_not_club = render_template('welcome.html',
-                                                 club=inexistant_club,
-                                                 competitions=competitions)
+        expected_html_not_club = render_template('index.html')
         competition = test_data['competitions'][0]
         url_not_club = url_for('book', competition=competition['name'],
                                club=inexistant_club['name'])
         response = client.get(url_not_club)
 
         assert response.data.decode() == expected_html_not_club
+
+    def test_book_past_competition(self, client):
+        club = server.clubs[0]
+        competition = server.competitions[0]
+        url = url_for("book", competition=competition['name'], club=club['name'])
+        response = client.get(url)
+        html = response.get_data(as_text=True)
+
+        assert "Impossible to book places for a past competition!" in html
 
     def test_purchasePlaces_too_many(self, client):
         club = server.clubs[0]
@@ -140,7 +143,8 @@ class TestServer:
             "club": club["name"],
             "places": "5",
         })
-        assert "Incorrect form data, invalid competition. Booking failed!" in response.get_data(as_text=True)
+        html = response.get_data(as_text=True)
+        assert "Incorrect form data, invalid competition. Booking failed!" in html
 
     def test_purchasePlaces_invalid_club(self, client):
         competition = server.competitions[0]
