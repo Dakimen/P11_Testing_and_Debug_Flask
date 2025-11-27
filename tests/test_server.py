@@ -56,6 +56,17 @@ class TestServer:
 
         assert response.data.decode() == expected_html
 
+    def test_showSummary_unknown_email(self, client):
+        email = "fakemail@club1.co"
+        response = client.post(
+            "/showSummary",
+            data={
+                "email": email
+            }
+        )
+        error_msg = "Sorry, that email wasn't found."
+        assert error_msg in response.get_data(as_text=True)
+
     def test_book_if_found(self, client, test_data):
         club = test_data['clubs'][1]
         competition = test_data['competitions'][0]
