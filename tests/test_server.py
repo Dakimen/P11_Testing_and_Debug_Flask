@@ -230,3 +230,25 @@ class TestServer:
         )
         html = response.get_data(as_text=True)
         assert "No more than 12 places allowed per club. Booking failed!" in html
+
+    def test_purcasePlaces_no_more_than_club_points(self, client):
+        competition = server.competitions[2]
+        club = server.clubs[1]  # 4 points
+        response = client.post(
+            "/purchasePlaces",
+            data={
+                "competition": competition["name"],
+                "club": club["name"],
+                "places": "10"  # Still within 12 points limit
+            }
+        )
+        html = response.get_data(as_text=True)
+        assert "Unable to book more places than the points available. Booking failed!" in html
+
+    def test_booking_page_html_club_point_limit_applied(self, client):
+        competition = server.competitions[2]
+        club = server.clubs[1]  # has 4 points
+        url = url_for('book', competition=competition['name'], club=club['name'])
+        response = client.get(url)
+        html_to_find = '<input type="number" name="places" id="" min="1" max="4" step="1"/>'
+        assert html_to_find in response.get_data(as_text=True)
