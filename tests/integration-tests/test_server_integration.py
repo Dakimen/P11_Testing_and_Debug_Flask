@@ -4,37 +4,12 @@ import pytest
 from unittest.mock import mock_open
 import copy
 
-from tests.conftest import app, test_data
+from tests.conftest import app, test_data, mock_db
 import server
 
 
-@pytest.fixture
-def mock_db(mocker, test_data):
-    clubs_copy = copy.deepcopy(test_data["clubs"])
-    competitions_copy = copy.deepcopy(test_data["competitions"])
-
-    mocker.patch.object(server, "clubs", clubs_copy)
-    mocker.patch.object(server, "competitions", competitions_copy)
-
-    return {"clubs": clubs_copy, "competitions": competitions_copy}
-
-
 @pytest.mark.usefixtures("test_data", "app", "mock_db")
-class TestServer:
-
-    def test_loadClubs(self, test_data, mocker):
-        fake_content = json.dumps({"clubs": test_data['clubs']})
-        mocker.patch("builtins.open", mock_open(read_data=fake_content))
-        result = server.loadClubs()
-
-        assert result == test_data['clubs']
-
-    def test_loadCompetitions(self, test_data, mocker):
-        fake_content = json.dumps({"competitions": test_data["competitions"]})
-        mocker.patch("builtins.open", mock_open(read_data=fake_content))
-        result = server.loadCompetitions()
-
-        assert result == test_data['competitions']
+class TestServerIntegration:
 
     def test_index_page(self, client, app):
         response = client.get("/")
@@ -271,3 +246,8 @@ class TestServer:
         response = client.get(url)
         html_to_find = '<input type="number" name="places" id="" min="1" max="12" step="1"/>'
         assert html_to_find in response.get_data(as_text=True)
+
+    def test_logout(self, client):
+        response = client.get('/logout', follow_redirects=True)
+        html = render_template('index.html')
+        assert html == response.data.decode()

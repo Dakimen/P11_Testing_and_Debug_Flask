@@ -1,5 +1,7 @@
 import pytest
+import copy
 
+import server
 from server import app as flask_app
 
 
@@ -47,3 +49,14 @@ def test_data(request):
         ]
 
     return {'clubs': clubs, 'competitions': competitions}
+
+
+@pytest.fixture
+def mock_db(mocker, test_data):
+    clubs_copy = copy.deepcopy(test_data["clubs"])
+    competitions_copy = copy.deepcopy(test_data["competitions"])
+
+    mocker.patch.object(server, "clubs", clubs_copy)
+    mocker.patch.object(server, "competitions", competitions_copy)
+
+    return {"clubs": clubs_copy, "competitions": competitions_copy}
