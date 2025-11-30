@@ -2,6 +2,8 @@ import json
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, flash, url_for
 
+import app_logic
+
 
 def loadClubs():
     with open('clubs.json') as c:
@@ -42,9 +44,7 @@ def book(competition, club):
     foundClub = next((c for c in clubs if c['name'] == club), None)
     foundCompetition = next((c for c in competitions if c['name'] == competition), None)
     if foundClub and foundCompetition:
-        now = datetime.now().replace(microsecond=0)
-        competition_date = datetime.strptime(foundCompetition['date'], "%Y-%m-%d %H:%M:%S")
-        if now > competition_date:
+        if app_logic.is_competition_in_past(foundCompetition['date']):
             flash("Impossible to book places for a past competition!")
             return render_template('welcome.html', club=club, competitions=competitions)
         return render_template('booking.html', club=foundClub, competition=foundCompetition)
@@ -60,9 +60,11 @@ def purchasePlaces():
     competition_name = request.form.get('competition')
     club_name = request.form.get('club')
     places_str = request.form.get('places')
+
     if not club_name:
         return render_template('index.html')
     club = next((c for c in clubs if c['name'] == club_name), None)
+
     if club is None:
         return render_template('index.html')
 
@@ -78,22 +80,18 @@ def purchasePlaces():
     if competition is None:
         flash("Incorrect form data, invalid competition. Booking failed!")
         return render_template('welcome.html', club=club, competitions=competitions)
+
     try:
         placesRequired = int(places_str)
     except (TypeError, ValueError):
         flash("A non-valid number of places required. Booking failed!")
         return render_template('welcome.html', club=club, competitions=competitions)
-    if placesRequired <= 0:
-        flash("A non-valid number of places required. Booking failed!")
-        return render_template('welcome.html', club=club, competitions=competitions)
-    if placesRequired > 12:
-        flash("No more than 12 places allowed per club. Booking failed!")
-        return render_template('welcome.html', club=club, competitions=competitions)
-    if placesRequired > int(club['points']):
-        flash("Unable to book more places than the points available. Booking failed!")
-        return render_template('welcome.html', club=club, competitions=competitions)
-    if placesRequired > int(competition['numberOfPlaces']):
-        flash("Not enough spots available. Booking failed!")
+
+    validated, message = app_logic.validate_places(placesRequired,
+                                                   int(club['points']),
+                                                   int(competition['numberOfPlaces']))
+    if not validated:
+        flash(message)
     else:
         club['points'] = int(club['points']) - placesRequired
         competition['numberOfPlaces'] = int(competition['numberOfPlaces']) - placesRequired

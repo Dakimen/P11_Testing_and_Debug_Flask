@@ -38,12 +38,12 @@ def test_validate_places_correct():
 
 
 @freeze_time("2025-11-30 12:00:00")
-def test_is_competition_in_past_no(mocker):
+def test_is_competition_in_past_no():
     result = app_logic.is_competition_in_past("2025-12-20 14:00:00")
     assert result is False
 
 
 @freeze_time("2025-11-30 12:00:00")
-def test_is_competition_in_past_yes(mocker):
+def test_is_competition_in_past_yes():
     result = app_logic.is_competition_in_past("2025-11-20 14:00:00")
     assert result is True
