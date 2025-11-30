@@ -4,7 +4,7 @@ from unittest.mock import mock_open
 import server
 
 
-@pytest.mark.usefixtures("test_data", "app", "mock_db")
+@pytest.mark.usefixtures("test_data")
 class TestServerUnit:
 
     def test_loadClubs(self, test_data, mocker):
