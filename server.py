@@ -61,22 +61,17 @@ def purchasePlaces():
     club_name = request.form.get('club')
     places_str = request.form.get('places')
 
-    if not club_name:
-        return render_template('index.html')
     club = next((c for c in clubs if c['name'] == club_name), None)
-
-    if club is None:
-        return render_template('index.html')
-
-    if not competition_name:
-        flash("Competition field is missing. Booking failed!")
-        return render_template('welcome.html', club=club, competitions=competitions)
-
-    if not places_str:
-        flash("Number of places field is missing. Booking failed!")
-        return render_template('welcome.html', club=club, competitions=competitions)
+    allowed, template, msg = app_logic.validate_request(competition_name, club_name, places_str)
+    if not allowed:
+        if msg is None or club is None:
+            return render_template(template)
+        flash(msg)
+        return render_template(template, club=club, competitions=competitions)
 
     competition = next((c for c in competitions if c['name'] == competition_name), None)
+    if club is None:
+        return render_template('index.html')
     if competition is None:
         flash("Incorrect form data, invalid competition. Booking failed!")
         return render_template('welcome.html', club=club, competitions=competitions)
