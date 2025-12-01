@@ -47,3 +47,31 @@ def test_is_competition_in_past_no():
 def test_is_competition_in_past_yes():
     result = app_logic.is_competition_in_past("2025-11-20 14:00:00")
     assert result is True
+
+
+def test_validate_request_True():
+    allowed, template, msg = app_logic.validate_request("comp", "club", "3")
+    assert allowed is True
+    assert template is None
+    assert msg is None
+
+
+def test_validate_request_no_club():
+    allowed, template, msg = app_logic.validate_request('comp', None, '3')
+    assert allowed is False
+    assert template == 'index.html'
+    assert msg is None
+
+
+def test_validate_request_no_competition():
+    allowed, template, msg = app_logic.validate_request(None, 'club', '3')
+    assert allowed is False
+    assert template == 'welcome.html'
+    assert msg == 'Competition field is missing. Booking failed!'
+
+
+def test_validate_request_no_places():
+    allowed, template, msg = app_logic.validate_request('comp', 'club', None)
+    assert allowed is False
+    assert template == 'welcome.html'
+    assert msg == 'Number of places field is missing. Booking failed!'
