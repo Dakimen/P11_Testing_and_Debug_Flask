@@ -81,8 +81,8 @@ class TestServerIntegration:
         assert response.data.decode() == expected_html_not_club
 
     def test_book_past_competition(self, client):
-        club = server.clubs[0]
-        competition = server.competitions[0]
+        club = server.app.clubs[0]
+        competition = server.app.competitions[0]
         url = url_for("book", competition=competition['name'], club=club['name'])
         response = client.get(url)
         html = response.get_data(as_text=True)
@@ -90,8 +90,8 @@ class TestServerIntegration:
         assert "Impossible to book places for a past competition!" in html
 
     def test_purchasePlaces_too_many(self, client):
-        club = server.clubs[0]
-        competition = server.competitions[2]
+        club = server.app.clubs[0]
+        competition = server.app.competitions[2]
 
         response = client.post(
             "/purchasePlaces",
@@ -106,8 +106,8 @@ class TestServerIntegration:
         assert "Not enough spots available. Booking failed!" in html
 
     def test_purchasePlaces(self, client):
-        club = server.clubs[0]
-        competition = server.competitions[0]
+        club = server.app.clubs[0]
+        competition = server.app.competitions[0]
 
         response = client.post(
             "/purchasePlaces",
@@ -122,7 +122,7 @@ class TestServerIntegration:
         assert "Great-booking complete!" in html
 
     def test_purchasePlaces_invalid_competition(self, client):
-        club = server.clubs[0]
+        club = server.app.clubs[0]
 
         response = client.post("/purchasePlaces", data={
             "competition": "NOT_A_REAL_COMP",
@@ -133,7 +133,7 @@ class TestServerIntegration:
         assert "Incorrect form data, invalid competition. Booking failed!" in html
 
     def test_purchasePlaces_invalid_club(self, client):
-        competition = server.competitions[0]
+        competition = server.app.competitions[0]
 
         response = client.post("/purchasePlaces", data={
             "competition": competition["name"],
@@ -144,7 +144,7 @@ class TestServerIntegration:
         assert response.data.decode() == expected_html
 
     def test_purchasePlaces_missing_fields(self, client):
-        club = server.clubs[0]
+        club = server.app.clubs[0]
         response = client.post("/purchasePlaces", data={
             "club": club["name"],
             "places": "5",
@@ -152,7 +152,7 @@ class TestServerIntegration:
         html = response.get_data(as_text=True)
         assert "Competition field is missing" in html
 
-        competition = server.competitions[0]
+        competition = server.app.competitions[0]
         response = client.post("/purchasePlaces", data={
             "competition": competition["name"],
             "places": "5",
@@ -170,8 +170,8 @@ class TestServerIntegration:
 
     @pytest.mark.parametrize("places", ["-2", "two", "0"])
     def test_purchasePlaces_invalidNumber(self, client, places):
-        competition = server.competitions[0]
-        club = server.clubs[0]
+        competition = server.app.competitions[0]
+        club = server.app.clubs[0]
         response = client.post(
             "/purchasePlaces",
             data={
@@ -184,8 +184,8 @@ class TestServerIntegration:
         assert "A non-valid number of places required." in html
 
     def test_purchasePlaces_pointsUpdated(self, client):
-        club = server.clubs[1]  # has 4 points
-        competition = server.competitions[0]
+        club = server.app.clubs[1]  # has 4 points
+        competition = server.app.competitions[0]
         points_expected = 2
         client.post(
             "/purchasePlaces",
@@ -195,17 +195,17 @@ class TestServerIntegration:
                 "places": "2"
             }
         )
-        assert server.clubs[1]['points'] == points_expected
+        assert server.app.clubs[1]['points'] == points_expected
 
     def test_pointsBoard(self, client):
         response = client.get('/points')
-        expected_html = render_template('points.html', clubs=server.clubs)
+        expected_html = render_template('points.html', clubs=server.app.clubs)
         assert response.data.decode() == expected_html
         assert "Club Test" in response.get_data(as_text=True)
 
     def test_purchasePlaces_more_than_12(self, client):
-        competition = server.competitions[0]
-        club = server.clubs[0]
+        competition = server.app.competitions[0]
+        club = server.app.clubs[0]
         response = client.post(
             "/purchasePlaces",
             data={
@@ -218,8 +218,8 @@ class TestServerIntegration:
         assert "No more than 12 places allowed per club. Booking failed!" in html
 
     def test_purcasePlaces_no_more_than_club_points(self, client):
-        competition = server.competitions[2]
-        club = server.clubs[1]  # 4 points
+        competition = server.app.competitions[2]
+        club = server.app.clubs[1]  # 4 points
         response = client.post(
             "/purchasePlaces",
             data={
@@ -232,16 +232,16 @@ class TestServerIntegration:
         assert "Unable to book more places than the points available. Booking failed!" in html
 
     def test_booking_page_html_club_point_limit_applied(self, client):
-        competition = server.competitions[2]
-        club = server.clubs[1]  # has 4 points
+        competition = server.app.competitions[2]
+        club = server.app.clubs[1]  # has 4 points
         url = url_for('book', competition=competition['name'], club=club['name'])
         response = client.get(url)
         html_to_find = '<input type="number" name="places" id="" min="1" max="4" step="1"/>'
         assert html_to_find in response.get_data(as_text=True)
 
     def test_booking_page_12_point_limit_applied(self, client):
-        competition = server.competitions[2]
-        club = server.clubs[0]  # has 30 points, above limit
+        competition = server.app.competitions[2]
+        club = server.app.clubs[0]  # has 30 points, above limit
         url = url_for('book', competition=competition['name'], club=club['name'])
         response = client.get(url)
         html_to_find = '<input type="number" name="places" id="" min="1" max="12" step="1"/>'

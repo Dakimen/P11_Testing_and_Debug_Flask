@@ -8,7 +8,6 @@ from server import app as flask_app
 @pytest.fixture
 def app():
     flask_app.config.update({"TESTING": True})
-    print("SECRET_KEY:", flask_app.config["SECRET_KEY"])
     yield flask_app
 
 
@@ -56,7 +55,7 @@ def mock_db(mocker, test_data):
     clubs_copy = copy.deepcopy(test_data["clubs"])
     competitions_copy = copy.deepcopy(test_data["competitions"])
 
-    mocker.patch.object(server, "clubs", clubs_copy)
-    mocker.patch.object(server, "competitions", competitions_copy)
+    mocker.patch.object(server.app, "clubs", clubs_copy)
+    mocker.patch.object(server.app, "competitions", competitions_copy)
 
     return {"clubs": clubs_copy, "competitions": competitions_copy}
