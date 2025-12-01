@@ -3,8 +3,8 @@ import server
 from test_data import load_test_data
 
 test_data = load_test_data()
-server.app.clubs = test_data["clubs"]
-server.app.competitions = test_data["competitions"]
+server.app.clubs = test_data['clubs']
+server.app.competitions = test_data['competitions']
 
 
 class ProjectPerfTest(HttpUser):
